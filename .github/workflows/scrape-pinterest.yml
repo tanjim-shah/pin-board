@@ -2,30 +2,32 @@ name: Scrape Pinterest Boards
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * *"  # runs daily at 4 AM UTC
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: 3.11
 
-      - name: Install Playwright
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Pinterest board scraper
+        run: python scripts/scrape_boards.py
+
+      - name: Commit and push JSON output
         run: |
-          pip install playwright
-          playwright install chromium
-
-      - name: Run Scraper
-        run: python .github/scripts/scrape_pinterest_board_names.py
-
-      - name: Upload JSON Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pinterest-boards
-          path: pinterest_boards.json
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add output/boards.json
+          git commit -m "Update Pinterest board list" || echo "No changes"
+          git push
