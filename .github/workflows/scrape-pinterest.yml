@@ -1,7 +1,7 @@
 name: Scrape Pinterest Boards
 
 on:
-  workflow_dispatch:  # manual trigger
+  workflow_dispatch:
 
 jobs:
   scrape:

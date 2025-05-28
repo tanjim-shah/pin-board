@@ -2,15 +2,15 @@ import json
 import time
 from playwright.sync_api import sync_playwright
 
-def auto_scroll(page, scroll_count=15, delay=1):
-    previous_height = 0
-    for _ in range(scroll_count):
-        page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+def auto_scroll(page, scroll_count=40, delay=1.5):
+    last_height = 0
+    for i in range(scroll_count):
+        page.mouse.wheel(0, 5000)
         time.sleep(delay)
         new_height = page.evaluate("document.body.scrollHeight")
-        if new_height == previous_height:
+        if new_height == last_height:
             break
-        previous_height = new_height
+        last_height = new_height
 
 def scrape_board_names(username, section="_saved"):
     url = f"https://www.pinterest.com/{username}/{section}/"
@@ -24,18 +24,18 @@ def scrape_board_names(username, section="_saved"):
         context = browser.new_context(user_agent=fake_user_agent)
         page = context.new_page()
         print(f"Visiting: {url}")
-        page.goto(url, timeout=60000)
+        page.goto(url, timeout=90000)
         page.wait_for_load_state("networkidle")
-
         auto_scroll(page)
 
+        # Better selector that works with Pinterest board cards
         board_titles = set()
-        h2_elements = page.query_selector_all("h2[title]")
+        titles = page.query_selector_all("a[aria-label]")
 
-        for h2 in h2_elements:
-            title = h2.get_attribute("title")
-            if title and not title.startswith("_"):
-                board_titles.add(title.strip())
+        for el in titles:
+            label = el.get_attribute("aria-label")
+            if label and "board" in label.lower():
+                board_titles.add(label.replace(" board", "").strip())
 
         browser.close()
 
